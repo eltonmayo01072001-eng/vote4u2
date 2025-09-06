@@ -22,6 +22,7 @@ export default function CreateVote() {
     const durationHours = hours + minutes / 60 + seconds / 3600;
 
     const payload = { topic, type, options, durationHours };
+    console.log("VITE_API_URL value:", import.meta.env.VITE_API_URL);
     console.log("Sending payload:", payload);
 
     try {
