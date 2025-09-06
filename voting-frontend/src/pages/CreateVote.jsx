@@ -20,17 +20,20 @@ export default function CreateVote() {
 
   const handleCreateVote = async () => {
     const durationHours = hours + minutes / 60 + seconds / 3600;
+
+    const payload = { topic, type, options, durationHours };
+    console.log("Sending payload:", payload);
+
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/createVote`, {
-        topic,
-        type,
-        options,
-        durationHours,
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/createVote`,
+        payload
+      );
+      console.log("Response received:", res.data);
       setVoteLink(res.data.link);
     } catch (err) {
-      alert("Error creating vote");
-      console.error(err);
+      console.error("Error creating vote:", err);
+      alert("Error creating vote. Check console for details.");
     }
   };
 
