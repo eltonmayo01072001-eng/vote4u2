@@ -1,26 +1,21 @@
 // mongodb.js
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient } from "mongodb";
 
 if (!process.env.MONGODB_URI) {
   throw new Error("❌ MONGODB_URI is not defined in environment variables!");
 }
 
 const uri = process.env.MONGODB_URI;
+
 let client;
 let clientPromise;
 
 if (process.env.NODE_ENV === "development") {
-  // In development, use a global variable to reuse client across hot reloads
+  // Reuse client in dev to prevent multiple connections
   if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, {
-      serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-      },
-    });
+    client = new MongoClient(uri);
     global._mongoClientPromise = client.connect()
-      .then(() => console.log("✅ MongoDB connected (development mode)"))
+      .then(() => console.log("✅ MongoDB connected (development)"))
       .catch((err) => {
         console.error("❌ MongoDB connection failed:", err);
         throw err;
@@ -28,16 +23,10 @@ if (process.env.NODE_ENV === "development") {
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production (serverless), create a new client per deployment instance
-  client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
-  });
+  // In production (serverless) create new client for each invocation
+  client = new MongoClient(uri);
   clientPromise = client.connect()
-    .then(() => console.log("✅ MongoDB connected (production mode)"))
+    .then(() => console.log("✅ MongoDB connected (production)"))
     .catch((err) => {
       console.error("❌ MongoDB connection failed:", err);
       throw err;

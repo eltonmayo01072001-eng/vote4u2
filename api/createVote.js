@@ -36,6 +36,7 @@ export default async function handler(req, res) {
     res.status(200).json({ link });
   } catch (err) {
     console.error("❌ CreateVote Error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: err.message, stack: err.stack });
+
   }
 }
