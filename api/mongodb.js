@@ -1,22 +1,47 @@
 // mongodb.js
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient } from "mongodb";
 
-const uri = "mongodb+srv://eltonmayo01072001:Trip2%23ell@cluster0.84fj99m.mongodb.net/voting?retryWrites=true&w=majority&appName=Cluster0";
-if (!uri) throw new Error("Add MONGODB_URI to environment variables");
+if (!process.env.MONGO_URI) {
+  throw new Error("❌ MONGO_URI is not defined in environment variables!");
+}
 
+const uri = process.env.MONGO_URI;
 let client;
 let clientPromise;
 
-if (!global._mongoClientPromise) {
+if (process.env.NODE_ENV === "development") {
+  // In dev mode, reuse client to prevent creating too many connections
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    global._mongoClientPromise = client.connect()
+      .then((c) => {
+        console.log("✅ MongoDB connected (development mode)");
+        return c;
+      })
+      .catch((err) => {
+        console.error("❌ MongoDB connection failed:", err);
+        throw err;
+      });
+  }
+  clientPromise = global._mongoClientPromise;
+} else {
+  // In production (serverless deployment)
   client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    }
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   });
-  global._mongoClientPromise = client.connect();
+  clientPromise = client.connect()
+    .then((c) => {
+      console.log("✅ MongoDB connected (production mode)");
+      return c;
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB connection failed:", err);
+      throw err;
+    });
 }
 
-clientPromise = global._mongoClientPromise;
 export default clientPromise;
