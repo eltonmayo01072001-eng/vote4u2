@@ -2,12 +2,15 @@
 import clientPromise from "./mongodb.js";
 import { nanoid } from "nanoid";
 
+
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
   try {
+    console.log("📌 MONGODB_URI:", process.env.MONGODB_URI);
     const { topic, type, options, durationHours } = req.body;
     console.log("📤 Payload received:", { topic, type, options, durationHours });
 
