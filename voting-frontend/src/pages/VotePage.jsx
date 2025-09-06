@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 export default function VotePage() {
   const { id } = useParams();
   const [vote, setVote] = useState(null);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState([]);
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
@@ -16,7 +16,8 @@ export default function VotePage() {
       setVote(data);
 
       if (new Date(data.expiresAt) <= new Date()) setShowResults(true);
-    } catch {
+    } catch (err) {
+      console.error("Error fetching vote:", err);
       setMessage("Failed to load vote");
     }
   };
@@ -59,8 +60,21 @@ export default function VotePage() {
         new Date().getTimezoneOffset()
     );
 
+  const handleOptionChange = (opt) => {
+    if (vote.type === "single") {
+      setSelected([opt]);
+    } else {
+      setSelected((prev) =>
+        prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+      );
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!selected) return;
+    if (!selected.length) {
+      alert("Select at least one option");
+      return;
+    }
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/submitVote`, {
@@ -72,7 +86,8 @@ export default function VotePage() {
       setMessage(data.message);
       await fetchVote();
       setShowResults(true);
-    } catch {
+    } catch (err) {
+      console.error("Error submitting vote:", err);
       setMessage("Error submitting vote");
     }
   };
@@ -80,7 +95,8 @@ export default function VotePage() {
   if (!vote) return <p className="text-center mt-10">Loading...</p>;
 
   const optionCounts = vote.options.map(
-    (opt) => vote.responses.filter((r) => r.choice === opt).length
+    (opt) =>
+      vote.responses.filter((r) => Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt).length
   );
 
   const votingEnded = new Date(vote.expiresAt) <= new Date();
@@ -98,7 +114,8 @@ export default function VotePage() {
                 type={vote.type === "single" ? "radio" : "checkbox"}
                 name="voteOption"
                 value={opt}
-                onChange={() => setSelected(opt)}
+                checked={selected.includes(opt)}
+                onChange={() => handleOptionChange(opt)}
                 className="mr-2"
               />
               <span className="text-lg">{opt}</span>

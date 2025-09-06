@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     console.log("📤 SubmitVote payload:", { voteId, choice, fingerprint });
 
     if (!voteId || !choice || !fingerprint) {
+      console.log("❌ Invalid data submitted");
       return res.status(400).json({ message: "Invalid data" });
     }
 
@@ -25,12 +26,19 @@ export default async function handler(req, res) {
       return res.status(403).json({ message: "Voting has ended." });
     }
 
+    // Check if this fingerprint already voted
     if (vote.responses.find((r) => r.fingerprint === fingerprint)) {
       return res.status(403).json({ message: "Already voted from this device." });
     }
 
-    vote.responses.push({ choice, fingerprint, timestamp: new Date() });
-    await votes.updateOne({ voteId }, { $set: { responses: vote.responses } });
+    // Save response (support multiple choices)
+    const choicesArray = Array.isArray(choice) ? choice : [choice];
+    vote.responses.push({ choices: choicesArray, fingerprint, timestamp: new Date() });
+
+    await votes.updateOne(
+      { voteId },
+      { $set: { responses: vote.responses } }
+    );
 
     console.log("✅ Vote submitted successfully");
     res.status(200).json({ message: "Vote submitted successfully" });
