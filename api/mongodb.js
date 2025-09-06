@@ -1,22 +1,19 @@
-// mongodb.js
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI;
-if (!uri) throw new Error("Add MONGODB_URI to environment variables");
+const uri = "mongodb+srv://eltonmayo01072001:Trip2%23ell@cluster0.84fj99m.mongodb.net/voting";
+const client = new MongoClient(uri);
 
-let client;
-let clientPromise;
-
-if (!global._mongoClientPromise) {
-  client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    }
-  });
-  global._mongoClientPromise = client.connect();
+async function test() {
+  try {
+    await client.connect();
+    const db = client.db("voting");
+    const collections = await db.listCollections().toArray();
+    console.log("Connected! Collections:", collections);
+  } catch (err) {
+    console.error("Mongo connection error:", err);
+  } finally {
+    await client.close();
+  }
 }
 
-clientPromise = global._mongoClientPromise;
-export default clientPromise;
+test();
