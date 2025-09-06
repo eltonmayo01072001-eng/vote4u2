@@ -2,7 +2,9 @@ import clientPromise from "./mongodb.js";
 import { nanoid } from "nanoid";
 
 export default async function handler(req, res) {
-  
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed send another request" });
+  }
 
   try {
     console.log("📌 VITE_API_URL:", process.env.VITE_API_URL);

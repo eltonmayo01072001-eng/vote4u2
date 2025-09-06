@@ -38,6 +38,18 @@ export default function CreateVote() {
     }
   };
 
+
+
+
+
+
+
+
+
+
+
+
+  
   const copyLink = () => {
     navigator.clipboard.writeText(voteLink);
     alert("Link copied to clipboard!");
