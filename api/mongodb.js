@@ -2,12 +2,7 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
 const uri = process.env.MONGODB_URI;
-if (!uri) {
-  console.error("MONGODB_URI is not set in environment variables");
-  throw new Error("Add MONGODB_URI to .env");
-}
-
-console.log("MongoDB URI loaded from environment");
+if (!uri) throw new Error("MONGODB_URI not found in environment");
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -17,22 +12,16 @@ const client = new MongoClient(uri, {
   },
 });
 
-let clientPromise = null;
+let clientPromise;
 
-async function connectClient() {
-  if (!clientPromise) {
-    try {
-      console.log("Connecting to MongoDB...");
-      clientPromise = await client.connect();
-      console.log("MongoDB connected successfully!");
-    } catch (err) {
-      console.error("Error connecting to MongoDB:", err);
-      throw err;
-    }
-  } else {
-    console.log("Reusing existing MongoDB client connection");
-  }
-  return clientPromise;
+try {
+  clientPromise = client.connect().then(() => {
+    console.log("✅ MongoDB connected successfully");
+    return client;
+  });
+} catch (err) {
+  console.error("❌ MongoDB connection error:", err);
+  throw err;
 }
 
-export default connectClient();
+export default clientPromise;
