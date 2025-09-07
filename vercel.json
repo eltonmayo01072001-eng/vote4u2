@@ -9,10 +9,15 @@
     {
       "src": "api/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/fallback.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.js" },
-    { "src": "/(.*)", "dest": "voting-frontend/$1" }
+    { "src": "/api/(.*)", "dest": "/api/$1.js" },          
+    { "src": "/(.*\\.(js|css|png|svg|ico))", "dest": "/voting-frontend/$1" }, 
+    { "src": "/(.*)", "dest": "/api/fallback.js" }      
   ]
 }

@@ -1,16 +1,14 @@
-import fs from "fs";
-import path from "path";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   try {
-    // Path to the built index.html
-    const indexPath = path.resolve("./voting-frontend/dist/index.html");
-    const html = fs.readFileSync(indexPath, "utf-8");
-
+    const indexPath = join(process.cwd(), "voting-frontend", "dist", "index.html");
+    const html = await readFile(indexPath, "utf-8");
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(html);
   } catch (err) {
     console.error("❌ Fallback Error:", err);
-    res.status(500).send("Server error");
+    res.status(500).send("Server Error");
   }
 }
