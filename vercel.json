@@ -1,16 +1,18 @@
 {
   "version": 2,
   "builds": [
-    { "src": "voting-frontend/package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } },
-    { "src": "api/**/*.js", "use": "@vercel/node" }
+    {
+      "src": "voting-frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1.js" },
-    
-   
-    { "src": "/(.*\\.(js|css|svg|png|jpg|jpeg|woff2?|json))", "dest": "voting-frontend/$1" },
-    
-   
-    { "src": "/(.*)", "dest": "voting-frontend/index.html" }
+    { "src": "/(.*)", "dest": "voting-frontend/$1" }
   ]
 }
