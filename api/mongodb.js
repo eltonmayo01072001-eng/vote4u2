@@ -13,7 +13,6 @@ if (process.env.NODE_ENV === "development") {
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // Production: always create a fresh connection (Vercel serverless)
   clientPromise = client.connect();
 }
 

@@ -3,12 +3,14 @@ import axios from "axios";
 
 export default function CreateVote() {
   const [topic, setTopic] = useState("");
-  const [type, setType] = useState("single"); // single/multiple
-  const [options, setOptions] = useState(["", ""]); // at least 2
+  const [type, setType] = useState("single");
+  const [options, setOptions] = useState(["", ""]);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [voteLink, setVoteLink] = useState("");
+
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleOptionChange = (index, value) => {
     const newOptions = [...options];
@@ -22,42 +24,24 @@ export default function CreateVote() {
     const durationHours = hours + minutes / 60 + seconds / 3600;
 
     const payload = { topic, type, options, durationHours };
-    console.log("VITE_API_URL value:", import.meta.env.VITE_API_URL);
-    console.log("Sending payload:", payload);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/createVote`,
-        payload
-      );
-      console.log("Response received:", res.data);
+      const res = await axios.post(`${API_URL}/api/createVote`, payload);
       setVoteLink(res.data.link);
     } catch (err) {
-      console.error("Error creating vote:", err);
-      alert("Error creating vote. Check console for details.");
+      console.error(err);
+      alert("Error creating vote. Check console.");
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-  
   const copyLink = () => {
     navigator.clipboard.writeText(voteLink);
-    alert("Link copied to clipboard!");
+    alert("Link copied!");
   };
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded mt-10">
-      <h1 className="text-2xl font-bold mb-4">Create a New Vote</h1>
+      <h1 className="text-2xl font-bold mb-4">Create Vote</h1>
 
       <input
         type="text"
@@ -94,61 +78,29 @@ export default function CreateVote() {
         Add Option
       </button>
 
-      <div className="mb-4">
-        <h2 className="font-semibold mb-1">Select Duration</h2>
-        <div className="flex gap-2">
-          <select
-            value={hours}
-            onChange={(e) => setHours(Number(e.target.value))}
-            className="p-2 border rounded"
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={i}>{i} Hours</option>
-            ))}
-          </select>
-          <select
-            value={minutes}
-            onChange={(e) => setMinutes(Number(e.target.value))}
-            className="p-2 border rounded"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>{i} Minutes</option>
-            ))}
-          </select>
-          <select
-            value={seconds}
-            onChange={(e) => setSeconds(Number(e.target.value))}
-            className="p-2 border rounded"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>{i} Seconds</option>
-            ))}
-          </select>
-        </div>
+      <div className="mb-4 flex gap-2">
+        <select value={hours} onChange={(e) => setHours(Number(e.target.value))} className="p-2 border rounded">
+          {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i} h</option>)}
+        </select>
+        <select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} className="p-2 border rounded">
+          {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{i} m</option>)}
+        </select>
+        <select value={seconds} onChange={(e) => setSeconds(Number(e.target.value))} className="p-2 border rounded">
+          {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{i} s</option>)}
+        </select>
       </div>
 
-      <button
-        onClick={handleCreateVote}
-        className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600"
-      >
+      <button onClick={handleCreateVote} className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600">
         Create Vote
       </button>
 
       {voteLink && (
         <div className="mt-4 p-3 bg-gray-100 rounded flex flex-col gap-2">
           <span className="text-gray-700">Vote Created!</span>
-          <a
-            href={voteLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline break-all"
-          >
+          <a href={voteLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline break-all">
             {voteLink}
           </a>
-          <button
-            onClick={copyLink}
-            className="mt-2 px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
-          >
+          <button onClick={copyLink} className="mt-2 px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
             Copy Link
           </button>
         </div>

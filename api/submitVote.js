@@ -1,4 +1,3 @@
-// api/submitVote.js
 import clientPromise from "./mongodb.js";
 
 export default async function handler(req, res) {
@@ -8,10 +7,8 @@ export default async function handler(req, res) {
 
   try {
     const { voteId, choice, fingerprint } = req.body;
-    console.log("📤 SubmitVote payload:", { voteId, choice, fingerprint });
 
     if (!voteId || !choice || !fingerprint) {
-      console.log("❌ Invalid data submitted");
       return res.status(400).json({ message: "Invalid data" });
     }
 
@@ -21,29 +18,22 @@ export default async function handler(req, res) {
 
     const vote = await votes.findOne({ voteId });
     if (!vote) return res.status(404).json({ message: "Vote not found" });
-
     if (new Date() > new Date(vote.expiresAt)) {
       return res.status(403).json({ message: "Voting has ended." });
     }
 
-    // Check if this fingerprint already voted
     if (vote.responses.find((r) => r.fingerprint === fingerprint)) {
       return res.status(403).json({ message: "Already voted from this device." });
     }
 
-    // Save response (support multiple choices)
     const choicesArray = Array.isArray(choice) ? choice : [choice];
     vote.responses.push({ choices: choicesArray, fingerprint, timestamp: new Date() });
 
-    await votes.updateOne(
-      { voteId },
-      { $set: { responses: vote.responses } }
-    );
+    await votes.updateOne({ voteId }, { $set: { responses: vote.responses } });
 
-    console.log("✅ Vote submitted successfully");
     res.status(200).json({ message: "Vote submitted successfully" });
   } catch (err) {
-    console.error("❌ submitVote Error:", err);
+    console.error("submitVote Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
