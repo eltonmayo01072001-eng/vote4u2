@@ -7,7 +7,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<CreateVote />} />
-      <Route path="/vote/:id" element={<VotePage />} />
+      <Route path="/vote/abc" element={<VotePage />} />
     </Routes>
   );
 }
