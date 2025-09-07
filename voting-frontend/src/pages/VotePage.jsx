@@ -71,7 +71,9 @@ export default function VotePage() {
   const votingEnded = new Date(vote.expiresAt) <= new Date();
 
   return (<>
-  <p>hiiiiiiiiiii</p></>
+  <p>hiiiiiiiiiii</p>
+  
+  </>
     
     // <div className="max-w-xl mx-auto p-6 mt-10 bg-white shadow-md rounded-lg">
     //   <h1 className="text-2xl font-bold mb-4 text-center">{vote.topic}</h1>
