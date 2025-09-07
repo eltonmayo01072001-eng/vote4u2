@@ -70,37 +70,39 @@ export default function VotePage() {
   const optionCounts = vote.options.map(opt => vote.responses.filter(r => Array.isArray(r.choices)? r.choices.includes(opt): r.choices===opt).length);
   const votingEnded = new Date(vote.expiresAt) <= new Date();
 
-  return (
-    <div className="max-w-xl mx-auto p-6 mt-10 bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-4 text-center">{vote.topic}</h1>
-      <p className="text-center mb-4 text-gray-600 font-medium">{timeLeft}</p>
+  return (<>
+  <p>hiiiiiiiiiii</p></>
+    
+    // <div className="max-w-xl mx-auto p-6 mt-10 bg-white shadow-md rounded-lg">
+    //   <h1 className="text-2xl font-bold mb-4 text-center">{vote.topic}</h1>
+    //   <p className="text-center mb-4 text-gray-600 font-medium">{timeLeft}</p>
 
-      {!showResults && !votingEnded && (
-        <div className="mb-4">
-          {vote.options.map(opt => (
-            <label key={opt} className="flex items-center mb-2 cursor-pointer">
-              <input type={vote.type==="single"?"radio":"checkbox"} checked={selected.includes(opt)} onChange={()=>handleOptionChange(opt)} className="mr-2"/>
-              <span className="text-lg">{opt}</span>
-            </label>
-          ))}
-          <button onClick={handleSubmit} className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 mt-2">Submit Vote</button>
-          <button onClick={()=>setShowResults(true)} className="w-full bg-gray-500 text-white py-2 rounded hover:bg-gray-600 mt-2">Show Results</button>
-        </div>
-      )}
+    //   {!showResults && !votingEnded && (
+    //     <div className="mb-4">
+    //       {vote.options.map(opt => (
+    //         <label key={opt} className="flex items-center mb-2 cursor-pointer">
+    //           <input type={vote.type==="single"?"radio":"checkbox"} checked={selected.includes(opt)} onChange={()=>handleOptionChange(opt)} className="mr-2"/>
+    //           <span className="text-lg">{opt}</span>
+    //         </label>
+    //       ))}
+    //       <button onClick={handleSubmit} className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 mt-2">Submit Vote</button>
+    //       <button onClick={()=>setShowResults(true)} className="w-full bg-gray-500 text-white py-2 rounded hover:bg-gray-600 mt-2">Show Results</button>
+    //     </div>
+    //   )}
 
-      {(showResults || votingEnded) && (
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2 text-center">Results</h2>
-          {vote.options.map((opt, idx)=>(
-            <div key={opt} className="flex justify-between mb-2">
-              <span>{opt}</span>
-              <span>{optionCounts[idx]} votes</span>
-            </div>
-          ))}
-        </div>
-      )}
+    //   {(showResults || votingEnded) && (
+    //     <div className="mb-4">
+    //       <h2 className="text-xl font-semibold mb-2 text-center">Results</h2>
+    //       {vote.options.map((opt, idx)=>(
+    //         <div key={opt} className="flex justify-between mb-2">
+    //           <span>{opt}</span>
+    //           <span>{optionCounts[idx]} votes</span>
+    //         </div>
+    //       ))}
+    //     </div>
+    //   )}
 
-      {message && <p className="mt-4 text-center text-gray-700">{message}</p>}
-    </div>
+    //   {message && <p className="mt-4 text-center text-gray-700">{message}</p>}
+    // </div>
   );
 }
