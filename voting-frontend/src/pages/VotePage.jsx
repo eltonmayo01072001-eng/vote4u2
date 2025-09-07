@@ -9,9 +9,17 @@ export default function VotePage() {
   const [showResults, setShowResults] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
 
+  // Function to get frontend base URL by removing /api if present
+  const getFrontendBase = () => {
+    const rawURL = import.meta.env.VITE_API_URL; // might include /api
+    return rawURL.replace(/\/api\/?$/, "");
+  };
+
   const fetchVote = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/getVote/${id}`);
+      // Fetch vote using query parameter style
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/getVote?id=${id}`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       setVote(data);
 
@@ -96,7 +104,9 @@ export default function VotePage() {
 
   const optionCounts = vote.options.map(
     (opt) =>
-      vote.responses.filter((r) => Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt).length
+      vote.responses.filter((r) =>
+        Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt
+      ).length
   );
 
   const votingEnded = new Date(vote.expiresAt) <= new Date();
