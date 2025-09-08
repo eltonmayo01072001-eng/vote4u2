@@ -13,6 +13,14 @@ export default function VotePage() {
   const [hasVoted, setHasVoted] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
 
+  const [labels, setLabels] = useState({
+    submitVote: "Submit Vote",
+    showResults: "Show Results",
+    resultsHeading: "Results",
+    loading: "Loading...",
+    selectOption: "Select at least one option",
+  });
+
   const fingerprint = btoa(
     navigator.userAgent +
     navigator.language +
@@ -22,6 +30,7 @@ export default function VotePage() {
     new Date().getTimezoneOffset()
   );
 
+  // Fetch vote and translate topic/options
   const fetchVote = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/getVote?id=${id}`);
@@ -35,6 +44,7 @@ export default function VotePage() {
       setTranslatedTopic(tTopic);
       setTranslatedOptions(tOptions);
 
+      // Check if user has already voted
       if (data.responses.find(r => r.fingerprint === fingerprint)) {
         setHasVoted(true);
         setShowResults(true);
@@ -47,15 +57,30 @@ export default function VotePage() {
     }
   };
 
+  // Translate UI labels
+  useEffect(() => {
+    async function translateUI() {
+      setLabels({
+        submitVote: await translateText("Submit Vote"),
+        showResults: await translateText("Show Results"),
+        resultsHeading: await translateText("Results"),
+        loading: await translateText("Loading..."),
+        selectOption: await translateText("Select at least one option"),
+      });
+    }
+    translateUI();
+  }, []);
+
   useEffect(() => { fetchVote(); }, [id]);
 
+  // Timer countdown
   useEffect(() => {
     if (!vote) return;
     const interval = setInterval(() => {
       const diff = new Date(vote.expiresAt) - new Date();
       setTimeLeft(diff > 0 
         ? `${Math.floor(diff/3600000)}h ${Math.floor((diff%3600000)/60000)}m ${Math.floor((diff%60000)/1000)}s` 
-        : "Voting ended"
+        : await translateText("Voting ended")
       );
       if (diff <= 0) setShowResults(true);
     }, 1000);
@@ -63,11 +88,19 @@ export default function VotePage() {
   }, [vote]);
 
   const handleOptionChange = (opt) => {
-    setSelected(vote.type === "single" ? [opt] : selected.includes(opt) ? selected.filter(o => o !== opt) : [...selected, opt]);
+    setSelected(vote.type === "single" 
+      ? [opt] 
+      : selected.includes(opt) 
+        ? selected.filter(o => o !== opt) 
+        : [...selected, opt]
+    );
   };
 
   const handleSubmit = async () => {
-    if (!selected.length) { alert("Select at least one option"); return; }
+    if (!selected.length) { 
+      alert(labels.selectOption); 
+      return; 
+    }
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/submitVote`, {
         method: "POST",
@@ -85,7 +118,7 @@ export default function VotePage() {
     }
   };
 
-  if (!vote) return <p className="text-center mt-10 text-gray-600">Loading...</p>;
+  if (!vote) return <p className="text-center mt-10 text-gray-600">{labels.loading}</p>;
 
   const optionCounts = vote.options.map(opt =>
     vote.responses.filter(r => Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt).length
@@ -114,18 +147,22 @@ export default function VotePage() {
             </label>
           ))}
 
-          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2">
-            Submit Vote
+          <button 
+            onClick={handleSubmit} 
+            className="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2">
+            {labels.submitVote}
           </button>
-          <button onClick={() => setShowResults(true)} className="w-full bg-gray-400 text-white py-2 rounded-lg shadow hover:bg-gray-500 transition mt-2">
-            Show Results
+          <button 
+            onClick={() => setShowResults(true)} 
+            className="w-full bg-gray-400 text-white py-2 rounded-lg shadow hover:bg-gray-500 transition mt-2">
+            {labels.showResults}
           </button>
         </div>
       )}
 
       {(showResults || hasVoted) && (
         <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-3 text-center text-gray-800">Results</h2>
+          <h2 className="text-xl font-semibold mb-3 text-center text-gray-800">{labels.resultsHeading}</h2>
           {translatedOptions.map((opt, idx) => (
             <div key={opt} className="flex justify-between mb-2 p-2 border-b border-gray-200">
               <span className="text-gray-700">{opt}</span>
