@@ -26,7 +26,6 @@ export default function VotePage() {
       const data = await res.json();
       setVote(data);
 
-
       if (data.responses.find((r) => r.fingerprint === fingerprint)) {
         setHasVoted(true);
         setShowResults(true);
@@ -42,7 +41,6 @@ export default function VotePage() {
   useEffect(() => {
     fetchVote();
   }, [id]);
-
 
   useEffect(() => {
     if (!vote) return;
@@ -68,17 +66,9 @@ export default function VotePage() {
     return () => clearInterval(interval);
   }, [vote]);
 
-
   const handleOptionChange = (opt) => {
-    if (vote.type === "single") {
-      setSelected([opt]);
-    } else {
-      setSelected((prev) =>
-        prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
-      );
-    }
+    setSelected([opt]);
   };
-
 
   const handleSubmit = async () => {
     if (!selected.length) {
@@ -112,6 +102,7 @@ export default function VotePage() {
       ).length
   );
 
+  const totalVotes = vote.responses.length || 1;
   const votingEnded = new Date(vote.expiresAt) <= new Date();
 
   return (
@@ -129,7 +120,7 @@ export default function VotePage() {
               hover:bg-blue-50`}
             >
               <input
-                type={vote.type === "single" ? "radio" : "checkbox"}
+                type="radio"
                 name="voteOption"
                 value={opt}
                 checked={selected.includes(opt)}
@@ -159,12 +150,26 @@ export default function VotePage() {
       {(showResults || votingEnded || hasVoted) && (
         <div className="bg-white p-4 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-3 text-center text-gray-800">Results</h2>
-          {vote.options.map((opt, idx) => (
-            <div key={opt} className="flex justify-between mb-2 p-2 border-b border-gray-200">
-              <span className="text-gray-700">{opt}</span>
-              <span className="font-semibold text-gray-800">{optionCounts[idx]} votes</span>
-            </div>
-          ))}
+
+          {vote.options.map((opt, idx) => {
+            const votes = optionCounts[idx];
+            const percentage = Math.round((votes / totalVotes) * 100);
+
+            return (
+              <div key={opt} className="mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-700">{opt}</span>
+                  <span className="text-gray-700 font-semibold">{votes} votes</span>
+                </div>
+                <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+                  <div
+                    className="h-4 bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
