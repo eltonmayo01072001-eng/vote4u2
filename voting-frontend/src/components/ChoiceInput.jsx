@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { translateText } from "../utils/translate.js";
 
 export default function ChoiceInput({ value, onChange, onDelete, canDelete }) {
-  const [deleteLabel, setDeleteLabel] = useState("Delete");
   const [placeholder, setPlaceholder] = useState("Option");
+  const [deleteLabel, setDeleteLabel] = useState("Delete");
 
   useEffect(() => {
-    async function fetchLabels() {
-      setDeleteLabel(await translateText("Delete"));
+    async function translateLabels() {
       setPlaceholder(await translateText("Option"));
+      setDeleteLabel(await translateText("Delete"));
     }
-    fetchLabels();
+    translateLabels();
   }, []);
 
   return (
