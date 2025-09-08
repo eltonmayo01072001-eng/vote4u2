@@ -1,5 +1,5 @@
 import React from "react";
-import translateText from "../utils/translateText.js"; // your translation function
+import translateText from "../utils/translate.js"; // your translation function
 
 export default function ChoiceInput({ value, onChange, onDelete, canDelete }) {
   return (
