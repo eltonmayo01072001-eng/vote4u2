@@ -1,177 +1,121 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import ChoiceInput from "../components/ChoiceInput.jsx";
 import { translateText } from "../utils/translate.js";
+import axios from "axios";
 
-export default function VotePage() {
-  const { id } = useParams();
-  const [vote, setVote] = useState(null);
-  const [translatedTopic, setTranslatedTopic] = useState("");
-  const [translatedOptions, setTranslatedOptions] = useState([]);
-  const [selected, setSelected] = useState([]);
-  const [message, setMessage] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState("");
+export default function CreateVote() {
+  const [topic, setTopic] = useState("");
+  const [options, setOptions] = useState(["", ""]);
+  const [hours, setHours] = useState(0);
+  const [minutes, setMinutes] = useState(0);
+  const [seconds, setSeconds] = useState(0);
+  const [voteLink, setVoteLink] = useState("");
   const [labels, setLabels] = useState({
-    submitVote: "Submit Vote",
-    showResults: "Show Results",
-    results: "Results",
-    votes: "votes",
-    loading: "Loading...",
-    votingEnded: "Voting ended",
+    createVote: "Create Vote",
+    addOption: "Add Option",
+    topicPlaceholder: "Topic",
+    selectDuration: "Select Duration",
+    copyLink: "Copy Link",
+    voteCreated: "Vote Created!",
   });
 
-  const fingerprint = btoa(
-    navigator.userAgent +
-      navigator.language +
-      screen.width +
-      screen.height +
-      screen.colorDepth +
-      new Date().getTimezoneOffset()
-  );
-
-  // Fetch and translate vote
-  const fetchVote = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/getVote?id=${id}`);
-      if (!res.ok) throw new Error("Vote not found");
-      const data = await res.json();
-      setVote(data);
-
-      const tTopic = await translateText(data.topic);
-      const tOptions = await Promise.all(data.options.map(opt => translateText(opt)));
-      setTranslatedTopic(tTopic);
-      setTranslatedOptions(tOptions);
-
-      if (data.responses.find(r => r.fingerprint === fingerprint)) {
-        setHasVoted(true);
-        setShowResults(true);
-      }
-      if (new Date(data.expiresAt) <= new Date()) setShowResults(true);
-    } catch (err) {
-      console.error("Error fetching vote:", err);
-      setMessage(await translateText("Failed to load vote"));
-    }
-  };
-
-  // Translate UI labels
   useEffect(() => {
-    async function translateLabels() {
+    async function translateUI() {
       setLabels({
-        submitVote: await translateText("Submit Vote"),
-        showResults: await translateText("Show Results"),
-        results: await translateText("Results"),
-        votes: await translateText("votes"),
-        loading: await translateText("Loading..."),
-        votingEnded: await translateText("Voting ended"),
+        createVote: await translateText("Create Vote"),
+        addOption: await translateText("Add Option"),
+        topicPlaceholder: await translateText("Topic"),
+        selectDuration: await translateText("Select Duration"),
+        copyLink: await translateText("Copy Link"),
+        voteCreated: await translateText("Vote Created!"),
       });
     }
-    translateLabels();
+    translateUI();
   }, []);
 
-  useEffect(() => { fetchVote(); }, [id]);
-
-  // Countdown timer
-  useEffect(() => {
-    if (!vote) return;
-    const interval = setInterval(() => {
-      const diff = new Date(vote.expiresAt) - new Date();
-      setTimeLeft(diff > 0
-        ? `${Math.floor(diff / 3600000)}h ${Math.floor((diff % 3600000) / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`
-        : labels.votingEnded
-      );
-      if (diff <= 0) setShowResults(true);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [vote, labels.votingEnded]);
-
-  const handleOptionChange = (opt) => {
-    setSelected(vote.type === "single" 
-      ? [opt] 
-      : selected.includes(opt) 
-        ? selected.filter(o => o !== opt) 
-        : [...selected, opt]
-    );
+  const handleOptionChange = (index, value) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
   };
+  const addOption = () => setOptions([...options, ""]);
+  const deleteOption = (index) => setOptions(options.filter((_, i) => i !== index));
 
-  const handleSubmit = async () => {
-    if (!selected.length) { alert(await translateText("Select at least one option")); return; }
+  const handleCreateVote = async () => {
+    const durationHours = hours + minutes / 60 + seconds / 3600;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/submitVote`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voteId: id, choice: selected, fingerprint }),
-      });
-      const data = await res.json();
-      setMessage(data.message);
-      setHasVoted(true);
-      setShowResults(true);
-      await fetchVote();
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/createVote`, { topic, options, durationHours });
+      setVoteLink(`${import.meta.env.VITE_API_URL}/vote/${res.data.voteId}`);
     } catch (err) {
-      console.error("Error submitting vote:", err);
-      setMessage(await translateText("Error submitting vote"));
+      console.error("Error creating vote:", err);
+      alert(await translateText("Error creating vote. Check console for details."));
     }
   };
 
-  if (!vote) return <p className="text-center mt-10 text-gray-600">{labels.loading}</p>;
-
-  const optionCounts = vote.options.map(opt =>
-    vote.responses.filter(r => Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt).length
-  );
-
-  const maxVotes = Math.max(...optionCounts, 1); // avoid division by zero
+  const copyLink = () => {
+    navigator.clipboard.writeText(voteLink);
+    alert(labels.copyLink);
+  };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 mt-10 bg-gray-50 shadow-lg rounded-xl">
-      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{translatedTopic}</h1>
-      <p className="text-center mb-6 text-gray-500 font-medium">{timeLeft}</p>
+    <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded mt-10">
+      <h1 className="text-2xl font-bold mb-4">{labels.createVote}</h1>
 
-      {!showResults && !hasVoted && (
-        <div className="mb-6">
-          {translatedOptions.map((opt, idx) => (
-            <label key={opt} className={`flex items-center mb-3 p-3 border rounded-lg cursor-pointer transition
-              ${selected.includes(opt) ? "bg-blue-100 border-blue-400" : "bg-white border-gray-300"}
-              hover:bg-blue-50`}>
-              <input
-                type={vote.type === "single" ? "radio" : "checkbox"}
-                name="voteOption"
-                value={opt}
-                checked={selected.includes(opt)}
-                onChange={() => handleOptionChange(opt)}
-                className="mr-3 w-5 h-5"
-              />
-              <span className="text-lg text-gray-700">{opt}</span>
-            </label>
-          ))}
+      <input
+        type="text"
+        placeholder={labels.topicPlaceholder}
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        className="w-full mb-3 p-2 border rounded"
+      />
 
-          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2">
-            {labels.submitVote}
-          </button>
-          <button onClick={() => setShowResults(true)} className="w-full bg-gray-400 text-white py-2 rounded-lg shadow hover:bg-gray-500 transition mt-2">
-            {labels.showResults}
-          </button>
+      {options.map((opt, i) => (
+        <div key={i} className="flex items-center mb-2">
+          <input
+            type="text"
+            placeholder={`${labels.createVote} ${i + 1}`}
+            value={opt}
+            onChange={(e) => handleOptionChange(i, e.target.value)}
+            className="border rounded p-2 flex-1"
+          />
+          {i >= 2 && (
+            <button onClick={() => deleteOption(i)} className="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+              Delete
+            </button>
+          )}
+        </div>
+      ))}
+
+      <button onClick={addOption} className="mb-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        {labels.addOption}
+      </button>
+
+      <div className="mb-4">
+        <h2 className="font-semibold mb-1">{labels.selectDuration}</h2>
+        <div className="flex gap-2">
+          <select value={hours} onChange={(e) => setHours(Number(e.target.value))} className="p-2 border rounded">
+            {Array.from({ length: 24 }, (_, i) => (<option key={i} value={i}>{i} Hours</option>))}
+          </select>
+          <select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} className="p-2 border rounded">
+            {Array.from({ length: 60 }, (_, i) => (<option key={i} value={i}>{i} Minutes</option>))}
+          </select>
+          <select value={seconds} onChange={(e) => setSeconds(Number(e.target.value))} className="p-2 border rounded">
+            {Array.from({ length: 60 }, (_, i) => (<option key={i} value={i}>{i} Seconds</option>))}
+          </select>
+        </div>
+      </div>
+
+      <button onClick={handleCreateVote} className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600">
+        {labels.createVote}
+      </button>
+
+      {voteLink && (
+        <div className="mt-4 p-3 bg-gray-100 rounded flex flex-col gap-2">
+          <span className="text-gray-700">{labels.voteCreated}</span>
+          <a href={voteLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline break-all">{voteLink}</a>
+          <button onClick={copyLink} className="mt-2 px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">{labels.copyLink}</button>
         </div>
       )}
-
-      {(showResults || hasVoted) && (
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-3 text-center text-gray-800">{labels.results}</h2>
-          {translatedOptions.map((opt, idx) => (
-            <div key={opt} className="mb-3">
-              <div className="flex justify-between mb-1">
-                <span className="text-gray-700">{opt}</span>
-                <span className="font-semibold text-gray-800">{optionCounts[idx]} {labels.votes}</span>
-              </div>
-              <div className="h-4 bg-gray-300 rounded-full overflow-hidden">
-                <div className="h-4 bg-blue-500 rounded-full transition-all duration-500"
-                     style={{ width: `${(optionCounts[idx] / maxVotes) * 100}%` }}></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {message && <p className="mt-4 text-center text-gray-700">{message}</p>}
     </div>
   );
 }
