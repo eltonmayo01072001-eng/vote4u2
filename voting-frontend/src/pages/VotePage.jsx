@@ -1,141 +1,55 @@
+// src/pages/VotePage.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { translateText } from "../../../api/translate.js";
+import { translateText } from "../utils/translateText";
 
-export default function VotePage() {
-  const { id } = useParams();
-  const [vote, setVote] = useState(null);
-  const [translatedTopic, setTranslatedTopic] = useState("");
-  const [translatedOptions, setTranslatedOptions] = useState([]);
-  const [selected, setSelected] = useState([]);
-  const [message, setMessage] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
+export default function VotePage({ vote }) {
   const [timeLeft, setTimeLeft] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const [labels, setLabels] = useState({
+    loading: "Loading...",
+    votingEnded: "Voting ended",
+  });
 
-  const lang = navigator.language || "en";
-
-  const fingerprint = btoa(
-    navigator.userAgent +
-    navigator.language +
-    screen.width +
-    screen.height +
-    screen.colorDepth +
-    new Date().getTimezoneOffset()
-  );
-
-  const fetchVote = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/getVote?id=${id}`);
-      if (!res.ok) throw new Error("Vote not found");
-      const data = await res.json();
-      setVote(data);
-
-      setTranslatedTopic(await translateText(data.topic, lang));
-      const tOptions = await Promise.all(data.options.map(opt => translateText(opt, lang)));
-      setTranslatedOptions(tOptions);
-
-      if (data.responses.find(r => r.fingerprint === fingerprint)) {
-        setHasVoted(true);
-        setShowResults(true);
-      }
-
-      if (new Date(data.expiresAt) <= new Date()) setShowResults(true);
-    } catch (err) {
-      console.error(err);
-      setMessage("Failed to load vote");
+  useEffect(() => {
+    async function translateLabels() {
+      setLabels({
+        loading: await translateText("Loading..."),
+        votingEnded: await translateText("Voting ended"),
+      });
     }
-  };
-
-  useEffect(() => { fetchVote(); }, [id]);
+    translateLabels();
+  }, []);
 
   useEffect(() => {
     if (!vote) return;
-    const interval = setInterval(() => {
-      const diff = new Date(vote.expiresAt) - new Date();
-      setTimeLeft(diff > 0 
-        ? `${Math.floor(diff/3600000)}h ${Math.floor((diff%3600000)/60000)}m ${Math.floor((diff%60000)/1000)}s` 
-        : "Voting ended"
+    const timer = setInterval(() => {
+      const diff = new Date(vote.endTime).getTime() - Date.now();
+      setTimeLeft(
+        diff > 0
+          ? `${Math.floor(diff / 3600000)}h ${Math.floor((diff % 3600000) / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`
+          : labels.votingEnded
       );
       if (diff <= 0) setShowResults(true);
     }, 1000);
-    return () => clearInterval(interval);
-  }, [vote]);
+    return () => clearInterval(timer);
+  }, [vote, labels.votingEnded]);
 
-  const handleOptionChange = (opt) => {
-    setSelected(vote.type === "single" ? [opt] : selected.includes(opt) ? selected.filter(o => o !== opt) : [...selected, opt]);
-  };
-
-  const handleSubmit = async () => {
-    if (!selected.length) { alert("Select at least one option"); return; }
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/submitVote`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voteId: id, choice: selected, fingerprint }),
-      });
-      const data = await res.json();
-      setMessage(data.message);
-      setHasVoted(true);
-      setShowResults(true);
-      await fetchVote();
-    } catch (err) {
-      console.error("Error submitting vote:", err);
-      setMessage("Error submitting vote");
-    }
-  };
-
-  if (!vote) return <p className="text-center mt-10 text-gray-600">Loading...</p>;
-
-  const optionCounts = vote.options.map(opt =>
-    vote.responses.filter(r => Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt).length
-  );
+  if (!vote) return <p className="text-center mt-10 text-gray-600">{labels.loading}</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 mt-10 bg-gray-50 shadow-lg rounded-xl">
-      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{translatedTopic}</h1>
-      <p className="text-center mb-6 text-gray-500 font-medium">{timeLeft}</p>
-
-      {!showResults && !hasVoted && (
-        <div className="mb-6">
-          {translatedOptions.map((opt, idx) => (
-            <label key={opt} className={`flex items-center mb-3 p-3 border rounded-lg cursor-pointer transition
-              ${selected.includes(opt) ? "bg-blue-100 border-blue-400" : "bg-white border-gray-300"}
-              hover:bg-blue-50`}>
-              <input
-                type={vote.type === "single" ? "radio" : "checkbox"}
-                name="voteOption"
-                value={opt}
-                checked={selected.includes(opt)}
-                onChange={() => handleOptionChange(opt)}
-                className="mr-3 w-5 h-5"
-              />
-              <span className="text-lg text-gray-700">{opt}</span>
-            </label>
-          ))}
-
-          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2">
-            Submit Vote
-          </button>
-          <button onClick={() => setShowResults(true)} className="w-full bg-gray-400 text-white py-2 rounded-lg shadow hover:bg-gray-500 transition mt-2">
-            Show Results
-          </button>
-        </div>
-      )}
-
-      {(showResults || hasVoted) && (
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-3 text-center text-gray-800">Results</h2>
-          {translatedOptions.map((opt, idx) => (
-            <div key={opt} className="flex justify-between mb-2 p-2 border-b border-gray-200">
-              <span className="text-gray-700">{opt}</span>
-              <span className="font-semibold text-gray-800">{optionCounts[idx]} votes</span>
-            </div>
+    <div className="max-w-md mx-auto mt-10 p-4 border rounded-lg">
+      <h1 className="text-2xl font-bold mb-4">{vote.title}</h1>
+      <p className="mb-4">{timeLeft}</p>
+      {!showResults && (
+        <div>
+          {vote.options.map((opt, i) => (
+            <button key={i} className="w-full mb-2 p-2 border rounded-lg">
+              {opt}
+            </button>
           ))}
         </div>
       )}
-
-      {message && <p className="mt-4 text-center text-gray-700">{message}</p>}
+      {showResults && <div> {/* Render results here */} </div>}
     </div>
   );
 }
