@@ -2,9 +2,9 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { text, targetLang } = req.body;
-
   try {
+    const { text, targetLang } = req.body;
+
     const response = await fetch("https://libretranslate.de/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -16,11 +16,12 @@ export default async function handler(req, res) {
       }),
     });
 
-    if (!response.ok) throw new Error("Translation failed");
+    if (!response.ok) throw new Error("Translation API error");
+
     const data = await response.json();
     res.status(200).json({ translatedText: data.translatedText });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ translatedText: text }); // fallback
+    console.error("Translation error:", err.message);
+    res.status(500).json({ error: err.message });
   }
 }
