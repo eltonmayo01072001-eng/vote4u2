@@ -1,7 +1,7 @@
 // src/pages/CreateVote.jsx
 import React, { useState, useEffect } from "react";
 import ChoiceInput from "../components/ChoiceInput";
-import { translateText } from "../utils/translateText";
+import { translateText } from "../utils/translateText.js";
 
 export default function CreateVote() {
   const [title, setTitle] = useState("");

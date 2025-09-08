@@ -1,6 +1,6 @@
 // src/components/ChoiceInput.jsx
 import React, { useEffect, useState } from "react";
-import { translateText } from "../utils/translateText";
+import { translateText } from "../utils/translateText.js";
 
 export default function ChoiceInput({ value, onChange, onDelete, canDelete }) {
   const [placeholder, setPlaceholder] = useState("Option");

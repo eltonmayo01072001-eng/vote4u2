@@ -1,6 +1,6 @@
 // src/pages/VotePage.jsx
 import React, { useEffect, useState } from "react";
-import { translateText } from "../utils/translateText";
+import { translateText } from "../utils/translateText.js";
 
 export default function VotePage({ vote }) {
   const [timeLeft, setTimeLeft] = useState("");
