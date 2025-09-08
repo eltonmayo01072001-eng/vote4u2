@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { translateText } from "../api/translate.js";
+import { translateText } from "../../../api/translate.js";
 
 export default function VotePage() {
   const { id } = useParams();

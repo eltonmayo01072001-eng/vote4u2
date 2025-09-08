@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ChoiceInput from "../components/ChoiceInput.jsx";
-import { translateText } from "../api/translate.js";
+import { translateText } from "../../../api/translate.js";
 
 export default function CreateVote() {
   const [topic, setTopic] = useState("");
