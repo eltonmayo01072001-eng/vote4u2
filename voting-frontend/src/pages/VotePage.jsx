@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { translateText } from "../utils/translate";
 
 export default function VotePage() {
   const { id } = useParams();
   const [vote, setVote] = useState(null);
+  const [translatedTopic, setTranslatedTopic] = useState("");
+  const [translatedOptions, setTranslatedOptions] = useState([]);
   const [selected, setSelected] = useState([]);
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
-  const [timeLeft, setTimeLeft] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState("");
 
   const fingerprint = btoa(
     navigator.userAgent +
-      navigator.language +
-      screen.width +
-      screen.height +
-      screen.colorDepth +
-      new Date().getTimezoneOffset()
+    navigator.language +
+    screen.width +
+    screen.height +
+    screen.colorDepth +
+    new Date().getTimezoneOffset()
   );
 
   const fetchVote = async () => {
@@ -26,7 +29,13 @@ export default function VotePage() {
       const data = await res.json();
       setVote(data);
 
-      if (data.responses.find((r) => r.fingerprint === fingerprint)) {
+      // Translate topic and options
+      const tTopic = await translateText(data.topic);
+      const tOptions = await Promise.all(data.options.map(opt => translateText(opt)));
+      setTranslatedTopic(tTopic);
+      setTranslatedOptions(tOptions);
+
+      if (data.responses.find(r => r.fingerprint === fingerprint)) {
         setHasVoted(true);
         setShowResults(true);
       }
@@ -38,44 +47,27 @@ export default function VotePage() {
     }
   };
 
-  useEffect(() => {
-    fetchVote();
-  }, [id]);
+  useEffect(() => { fetchVote(); }, [id]);
 
   useEffect(() => {
     if (!vote) return;
-
-    const updateTimer = () => {
-      const now = new Date();
-      const expires = new Date(vote.expiresAt);
-      const diff = expires - now;
-
-      if (diff <= 0) {
-        setTimeLeft("Voting ended");
-        setShowResults(true);
-      } else {
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    const interval = setInterval(() => {
+      const diff = new Date(vote.expiresAt) - new Date();
+      setTimeLeft(diff > 0 
+        ? `${Math.floor(diff/3600000)}h ${Math.floor((diff%3600000)/60000)}m ${Math.floor((diff%60000)/1000)}s` 
+        : "Voting ended"
+      );
+      if (diff <= 0) setShowResults(true);
+    }, 1000);
     return () => clearInterval(interval);
   }, [vote]);
 
   const handleOptionChange = (opt) => {
-    setSelected([opt]);
+    setSelected(vote.type === "single" ? [opt] : selected.includes(opt) ? selected.filter(o => o !== opt) : [...selected, opt]);
   };
 
   const handleSubmit = async () => {
-    if (!selected.length) {
-      alert("Select at least one option");
-      return;
-    }
-
+    if (!selected.length) { alert("Select at least one option"); return; }
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/submitVote`, {
         method: "POST",
@@ -95,32 +87,23 @@ export default function VotePage() {
 
   if (!vote) return <p className="text-center mt-10 text-gray-600">Loading...</p>;
 
-  const optionCounts = vote.options.map(
-    (opt) =>
-      vote.responses.filter((r) =>
-        Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt
-      ).length
+  const optionCounts = vote.options.map(opt =>
+    vote.responses.filter(r => Array.isArray(r.choices) ? r.choices.includes(opt) : r.choices === opt).length
   );
-
-  const totalVotes = vote.responses.length || 1;
-  const votingEnded = new Date(vote.expiresAt) <= new Date();
 
   return (
     <div className="max-w-2xl mx-auto p-6 mt-10 bg-gray-50 shadow-lg rounded-xl">
-      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{vote.topic}</h1>
+      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{translatedTopic}</h1>
       <p className="text-center mb-6 text-gray-500 font-medium">{timeLeft}</p>
 
-      {!showResults && !votingEnded && !hasVoted && (
+      {!showResults && !hasVoted && (
         <div className="mb-6">
-          {vote.options.map((opt) => (
-            <label
-              key={opt}
-              className={`flex items-center mb-3 p-3 border rounded-lg cursor-pointer transition
+          {translatedOptions.map((opt, idx) => (
+            <label key={opt} className={`flex items-center mb-3 p-3 border rounded-lg cursor-pointer transition
               ${selected.includes(opt) ? "bg-blue-100 border-blue-400" : "bg-white border-gray-300"}
-              hover:bg-blue-50`}
-            >
+              hover:bg-blue-50`}>
               <input
-                type="radio"
+                type={vote.type === "single" ? "radio" : "checkbox"}
                 name="voteOption"
                 value={opt}
                 checked={selected.includes(opt)}
@@ -131,45 +114,24 @@ export default function VotePage() {
             </label>
           ))}
 
-          <button
-            onClick={handleSubmit}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2"
-          >
+          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white py-2 rounded-lg shadow hover:bg-blue-700 transition mt-2">
             Submit Vote
           </button>
-
-          <button
-            onClick={() => setShowResults(true)}
-            className="w-full bg-gray-400 text-white py-2 rounded-lg shadow hover:bg-gray-500 transition mt-2"
-          >
+          <button onClick={() => setShowResults(true)} className="w-full bg-gray-400 text-white py-2 rounded-lg shadow hover:bg-gray-500 transition mt-2">
             Show Results
           </button>
         </div>
       )}
 
-      {(showResults || votingEnded || hasVoted) && (
+      {(showResults || hasVoted) && (
         <div className="bg-white p-4 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-3 text-center text-gray-800">Results</h2>
-
-          {vote.options.map((opt, idx) => {
-            const votes = optionCounts[idx];
-            const percentage = Math.round((votes / totalVotes) * 100);
-
-            return (
-              <div key={opt} className="mb-4">
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-700">{opt}</span>
-                  <span className="text-gray-700 font-semibold">{votes} votes</span>
-                </div>
-                <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                  <div
-                    className="h-4 bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            );
-          })}
+          {translatedOptions.map((opt, idx) => (
+            <div key={opt} className="flex justify-between mb-2 p-2 border-b border-gray-200">
+              <span className="text-gray-700">{opt}</span>
+              <span className="font-semibold text-gray-800">{optionCounts[idx]} votes</span>
+            </div>
+          ))}
         </div>
       )}
 
