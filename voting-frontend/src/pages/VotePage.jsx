@@ -19,7 +19,6 @@ export default function VotePage() {
       new Date().getTimezoneOffset()
   );
 
-  // Fetch vote and check if user has already voted
   const fetchVote = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/getVote?id=${id}`);
@@ -27,7 +26,7 @@ export default function VotePage() {
       const data = await res.json();
       setVote(data);
 
-      // Check if fingerprint already voted
+
       if (data.responses.find((r) => r.fingerprint === fingerprint)) {
         setHasVoted(true);
         setShowResults(true);
@@ -44,7 +43,7 @@ export default function VotePage() {
     fetchVote();
   }, [id]);
 
-  // Countdown timer
+
   useEffect(() => {
     if (!vote) return;
 
@@ -69,7 +68,7 @@ export default function VotePage() {
     return () => clearInterval(interval);
   }, [vote]);
 
-  // Handle option selection
+
   const handleOptionChange = (opt) => {
     if (vote.type === "single") {
       setSelected([opt]);
@@ -80,7 +79,7 @@ export default function VotePage() {
     }
   };
 
-  // Submit vote
+
   const handleSubmit = async () => {
     if (!selected.length) {
       alert("Select at least one option");

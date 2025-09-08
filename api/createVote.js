@@ -23,7 +23,6 @@ export default async function handler(req, res) {
     const voteDoc = { voteId, topic, type, options, expiresAt, responses: [] };
     await votes.insertOne(voteDoc);
 
-    // generate frontend link
     const link = `${process.env.VITE_API_URL}/vote/${voteId}`;
     res.status(200).json({ link });
   } catch (err) {

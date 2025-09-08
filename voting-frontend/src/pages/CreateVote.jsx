@@ -3,7 +3,7 @@ import axios from "axios";
 
 export default function CreateVote() {
   const [topic, setTopic] = useState("");
-  const [options, setOptions] = useState(["", ""]); // 2 default options
+  const [options, setOptions] = useState(["", ""]);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
