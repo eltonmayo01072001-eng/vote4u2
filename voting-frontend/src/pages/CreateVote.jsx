@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ChoiceInput from "../components/ChoiceInput.jsx";
-import { translateText } from "../utils/translate.js";
+import { translateText } from "../utils/translate";
 import axios from "axios";
 
 export default function CreateVote() {
